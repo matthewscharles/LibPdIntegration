@@ -1,4 +1,4 @@
-﻿// LibPdInstance.cs - Unity integration of libpd, supporting multiple instances.
+// LibPdInstance.cs - Unity integration of libpd, supporting multiple instances.
 // -----------------------------------------------------------------------------
 // Copyright (c) 2019 Niall Moody
 // 
@@ -512,7 +512,7 @@ public class LibPdInstance : MonoBehaviour
 		if (initErr != 0)
 		{
 			Debug.LogWarning("Warning; libpd_init() returned " + initErr);
-			Debug.LogWarning("(if you're running this in the editor that probably just means this isn't the first time you've run your game, and is not a problem)");
+			// Debug.LogWarning("(if you're running this in the editor that probably just means this isn't the first time you've run your game, and is not a problem)");
 		}
 
 		//Initialise libpd, if it's not already.
@@ -757,16 +757,27 @@ public class LibPdInstance : MonoBehaviour
 
 	//--------------------------------------------------------------------------
 	/// Process audio.
+	private static readonly object _libpdLock = new object();
 	void OnAudioFilterRead(float[] data, int channels)
 	{
-		if(!pdFail && !patchFail && loaded)
+		if (!pdFail && !patchFail && loaded)
 		{
-			libpd_set_instance(instance);
-			libpd_process_float(numTicks, data, data);
+			lock (_libpdLock)
+			{
+				try
+				{
+					libpd_set_instance(instance);
+					libpd_process_float(numTicks, data, data);
+				}
+				catch (Exception ex)
+				{
+					// Handle or log the exception as needed
+					Debug.LogError("Error processing audio: " + ex.Message);
+				}
+			}
 		}
 	}
 	#endregion
-
 	#region public methods
 	//--------------------------------------------------------------------------
 	///	Returns the dollar-zero ID for the patch instance.
