@@ -1,4 +1,4 @@
-// LibPdInstance.cs - Unity integration of libpd, supporting multiple instances.
+﻿// LibPdInstance.cs - Unity integration of libpd, supporting multiple instances.
 // -----------------------------------------------------------------------------
 // Copyright (c) 2019 Niall Moody
 // 
@@ -641,6 +641,15 @@ public class LibPdInstance : MonoBehaviour
 				}
 			}
 		}
+		LibPdManager manager = FindObjectOfType<LibPdManager>();
+        if (manager != null)
+        {
+            manager.RegisterInstance(this);
+        }
+        else
+        {
+            Debug.LogError("LibPdManager not found in the scene.");
+        }
 	}
 
 	//--------------------------------------------------------------------------
@@ -757,26 +766,26 @@ public class LibPdInstance : MonoBehaviour
 
 	//--------------------------------------------------------------------------
 	/// Process audio.
-	private static readonly object _libpdLock = new object();
-	void OnAudioFilterRead(float[] data, int channels)
-	{
-		if (!pdFail && !patchFail && loaded)
-		{
-			lock (_libpdLock)
-			{
-				try
-				{
-					libpd_set_instance(instance);
-					libpd_process_float(numTicks, data, data);
-				}
-				catch (Exception ex)
-				{
-					// Handle or log the exception as needed
-					Debug.LogError("Error processing audio: " + ex.Message);
-				}
-			}
-		}
-	}
+	// private static readonly object _libpdLock = new object();
+	// void OnAudioFilterRead(float[] data, int channels)
+	// {
+	// 	if (!pdFail && !patchFail && loaded)
+	// 	{
+	// 		lock (_libpdLock)
+	// 		{
+	// 			try
+	// 			{
+	// 				libpd_set_instance(instance);
+	// 				libpd_process_float(numTicks, data, data);
+	// 			}
+	// 			catch (Exception ex)
+	// 			{
+	// 				// Handle or log the exception as needed
+	// 				Debug.LogError("Error processing audio: " + ex.Message);
+	// 			}
+	// 		}
+	// 	}
+	// }
 	#endregion
 	#region public methods
 	//--------------------------------------------------------------------------
@@ -1247,4 +1256,21 @@ public class LibPdInstance : MonoBehaviour
 	}
 
 	#endregion
+	
+	public IntPtr GetInstance()
+    {
+        return instance;
+    }
+
+    public int NumTicks
+    {
+        get { return numTicks; }
+    }
+
+    public bool IsLoaded
+    {
+        get { return loaded && !pdFail && !patchFail; }
+    }
+
 }
+
